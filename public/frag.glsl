@@ -11,7 +11,7 @@ precision highp float;
 uniform vec3 camPos;
 uniform vec3 boxSize;
 uniform float morphPower;
-uniform float boxThickness;
+uniform float refractionPower;
 uniform vec2 resolution;
 uniform float uTime;
 
@@ -42,11 +42,10 @@ float sdPlane(vec3 p) {
   return d;
 }
 float sdBox(vec3 point, vec3 position, vec3 size) {
-  // point.xz *= rotate(0.3);
-  // point.xy *= rotate(3.1415 * 0.25);
+  point.xz *= rotate(uTime);
   point += position;
   point = abs(point) - size;
-  float morphAmount = 0.03;
+  float morphAmount = 0.1;
   return length(max(point, 0.)) + min(max(point.x, max(point.y, point.z)), 0.) - morphAmount;
 }
 float sdSphere(vec3 p, float s) {
@@ -123,8 +122,8 @@ float getLight(vec3 ro, vec3 rd) {
 
     power += rfl0;
     power += rfl1;
-    power += rfr0;
-    power += rfr1;
+    // power += rfr0;
+    // power += rfr1;
   }
 
   return power;
@@ -192,8 +191,7 @@ void main() {
   rotateLights(rayOrigin, camRight, camUp, camForward);
 
   #if AA > 1
-  for(int m = 0; m < AA; m++)
-    for(int n = 0; n < AA; n++) {
+  for(int m = 0; m < AA; m++) for(int n = 0; n < AA; n++) {
       vec2 o = vec2(float(m), float(n)) / float(AA) - 0.;
       vec2 uv = (2. * gl_FragCoord.xy + o - resolution) / resolution.y;
       uv *= 0.5;
@@ -234,19 +232,20 @@ void main() {
         for(int i = 0; i < RFL_STEPS; i++) {
           rflR = getReflection(rflR, i);
 
-          power.r -= rflR.power;
+          power.r -= rflR.power * refractionPower;
         }
         for(int i = 0; i < RFL_STEPS; i++) {
           rflG = getReflection(rflG, i);
 
-          power.g -= rflG.power;
-          // power.g += rflG.power / 4.0;
-          // power.b += rflG.power / 10.0;
+          power -= rflG.power * (1.0 - refractionPower);
+          power.g -= rflG.power * refractionPower;
+          // power.g -= rflG.power / 4.0;
+          // power.b -= rflG.power / 10.0;
         }
         for(int i = 0; i < RFL_STEPS; i++) {
           rflB = getReflection(rflB, i);
 
-          power.b -= rflB.power;
+          power.b -= rflB.power * refractionPower;
         }
         // power *= textureCube(bg, rflG.direction).rgb;
       } else {
