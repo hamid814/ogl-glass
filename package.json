@@ -6,6 +6,7 @@
   "scripts": {
     "deploy": "gh-pages -d dist"
   },
+  "homepage": "https://hamid814.github.io/ogl-glass/",
   "keywords": [],
   "author": "hamid814",
   "license": "ISC",
